@@ -1,5 +1,5 @@
-const newDeck = document.querySelector('#new-deck-btn')
-const draw = document.querySelector('#draw-btn')
+const newDeckBtn = document.querySelector('#new-deck-btn')
+const drawBtn = document.querySelector('#draw-btn')
 const cardsContainer = document.querySelector('.cards-container')
 const playerCardDiv = document.querySelector('#player-card')
 const compCardDiv = document.querySelector('#comp-card')
@@ -28,40 +28,54 @@ let scoreBoard = {
 }
 
 const deckCheck = () => {
-    if(!deckInfo.id || deckInfo.remaining < 2) {
-        draw.style.display = 'none'
+    if(!deckInfo.id) drawBtn.disabled = true
+    if(deckInfo.remaining < 2) {
+        drawBtn.disabled = true
         matchCheck()
     }
 }
+
+deckCheck()
 
 const matchCheck = () => {
     if(scoreBoard.player > scoreBoard.comp) titleMsg.innerHTML = 'You Win!'
     if(scoreBoard.player < scoreBoard.comp) titleMsg.innerHTML = 'The Computer Wins!'
     if(scoreBoard.player == scoreBoard.comp) titleMsg.innerHTML = "It's a Draw!"
+    newDeckBtn.disabled = false
 }
 
-deckCheck()
+const gameReset = () => {
+    titleMsg.innerHTML = 'Game of War'
+    scoreBoard = {
+        player: 0,
+        comp: 0,
+        turnResult: null,
+        matchResult: null
+    }
+    playerCardDiv.innerHTML = ''
+    compCardDiv.innerHTML = ''
+}
 
-const getDeck = () => {
-    fetch('https://apis.scrimba.com/deckofcards/api/deck/new/shuffle/')
-        .then(response => response.json())
-        .then(data => {
-            deckInfo.id = data.deck_id
-            draw.style.display = 'block'
-            remainingCards.innerHTML = deckInfo.remaining
-        })
+const getDeck = async () => {
+    gameReset()
+    const res = await fetch('https://apis.scrimba.com/deckofcards/api/deck/new/shuffle/')
+    const data = await res.json()
+    deckInfo.id = data.deck_id
+    deckInfo.remaining = data.remaining
+    drawBtn.disabled = false
+    remainingCards.innerHTML = deckInfo.remaining
+    renderScore()
+    newDeckBtn.disabled = true
 }
     
     
-const getCards = () => {
-    fetch(`https://apis.scrimba.com/deckofcards/api/deck/${deckInfo.id}/draw/?count=2`)
-        .then(response => response.json())
-        .then(data => {
-            Object.assign(playerCard, data.cards[0])
-            Object.assign(compCard, data.cards[1])
-            deckInfo.remaining = data.remaining
-        })
-        .then(renderCards)
+const getCards = async () => {
+    const res = await fetch(`https://apis.scrimba.com/deckofcards/api/deck/${deckInfo.id}/draw/?count=2`)
+    const data = await res.json()
+    Object.assign(playerCard, data.cards[0])
+    Object.assign(compCard, data.cards[1])
+    deckInfo.remaining = data.remaining
+    renderCards()
 }
 
 const renderCards = () => {
@@ -69,7 +83,7 @@ const renderCards = () => {
     createCardImg(compCard, compCardDiv)
     scoreCheck(playerCard.value, compCard.value)
     renderScore()
-    setTimeout(turnMsg, 1000)
+    setTimeout(turnMsg, 250)
     deckCheck()
 }
 
@@ -113,8 +127,8 @@ const turnMsg = () => {
     turnMessage.style.display = 'block'
     setTimeout(() => {
         turnMessage.style.display = 'none'
-    }, 3000)
+    }, 2000)
 }
 
-newDeck.addEventListener('click', getDeck)
-draw.addEventListener('click', getCards)
+newDeckBtn.addEventListener('click', getDeck)
+drawBtn.addEventListener('click', getCards)
